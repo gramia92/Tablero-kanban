@@ -1,0 +1,33 @@
+# ---- .NET / Backend ----
+backend/**/bin/
+backend/**/obj/
+backend/**/*.user
+backend/**/.vs/
+*.suo
+
+# appsettings locales con secretos (la config real siempre llega por variables de entorno)
+backend/**/appsettings.Local.json
+
+# ---- Angular / Frontend ----
+frontend/node_modules/
+frontend/dist/
+frontend/.angular/cache/
+frontend/coverage/
+
+# Variables de entorno reales (solo se versiona .env.example)
+.env
+*.env
+!*.env.example
+
+# ---- Herramientas locales ----
+.claude/
+
+# ---- Editores / OS ----
+.vs/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# ---- Docker ----
+**/postgres-data/

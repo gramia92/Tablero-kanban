@@ -1,0 +1,6 @@
+@IdeasGroup.Kanban.WebApi_HostAddress = http://localhost:5007
+
+GET {{IdeasGroup.Kanban.WebApi_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
