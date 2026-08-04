@@ -69,6 +69,20 @@ public class Project : AuditableEntity
         return member;
     }
 
+    public void RemoveMember(Guid userId)
+    {
+        if (userId == OwnerId)
+        {
+            throw new DomainException("No se puede quitar al propietario del proyecto.");
+        }
+
+        var member = _members.FirstOrDefault(m => m.UserId == userId)
+            ?? throw new ProjectMemberNotFoundException();
+
+        _members.Remove(member);
+        Touch();
+    }
+
     public Label AddLabel(string name, string color)
     {
         var label = Label.Create(Id, name, color);

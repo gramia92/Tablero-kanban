@@ -24,4 +24,7 @@ public class FakeUserRepository : IUserRepository
         _users.Add(user);
         return Task.CompletedTask;
     }
+
+    public Task<IReadOnlyList<User>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default) =>
+        Task.FromResult<IReadOnlyList<User>>(_users.Where(u => ids.Contains(u.Id)).ToList());
 }

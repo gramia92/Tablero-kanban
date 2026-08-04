@@ -24,4 +24,7 @@ public class UserRepository : IUserRepository
         _dbContext.Users.Add(user);
         await _dbContext.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task<IReadOnlyList<User>> GetByIdsAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken = default) =>
+        await _dbContext.Users.Where(u => ids.Contains(u.Id)).ToListAsync(cancellationToken);
 }

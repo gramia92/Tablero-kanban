@@ -43,4 +43,45 @@ public class Board : AuditableEntity
         Touch();
         return column;
     }
+
+    public void RenameColumn(Guid columnId, string name)
+    {
+        var column = GetColumnOrThrow(columnId);
+        column.Rename(name);
+        Touch();
+    }
+
+    public void RemoveColumn(Guid columnId)
+    {
+        var column = GetColumnOrThrow(columnId);
+        if (column.Tasks.Count > 0)
+        {
+            throw new ColumnHasTasksException();
+        }
+
+        _columns.Remove(column);
+        Touch();
+    }
+
+    public void ReorderColumns(IReadOnlyList<Guid> orderedColumnIds)
+    {
+        if (orderedColumnIds.Count != _columns.Count || orderedColumnIds.Distinct().Count() != _columns.Count ||
+            orderedColumnIds.Any(id => _columns.All(c => c.Id != id)))
+        {
+            throw new DomainException("El nuevo orden debe incluir exactamente las columnas actuales del tablero.");
+        }
+
+        for (var i = 0; i < orderedColumnIds.Count; i++)
+        {
+            GetColumnOrThrow(orderedColumnIds[i]).MoveTo(i);
+        }
+
+        Touch();
+    }
+
+    private BoardColumn GetColumnOrThrow(Guid columnId)
+    {
+        return _columns.FirstOrDefault(c => c.Id == columnId)
+            ?? throw new BoardColumnNotFoundException();
+    }
 }
