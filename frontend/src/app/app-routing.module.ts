@@ -2,14 +2,17 @@ import { RouterModule } from '@angular/router';
 import { NgModule } from '@angular/core';
 import { NotfoundComponent } from './demo/components/notfound/notfound.component';
 import { AppLayoutComponent } from "./layout/app.layout.component";
+import { AuthGuard } from './core/guards/auth.guard';
 
 @NgModule({
     imports: [
         RouterModule.forRoot([
             {
                 path: '', component: AppLayoutComponent,
+                canActivate: [AuthGuard],
                 children: [
-                    { path: '', loadChildren: () => import('./demo/components/dashboard/dashboard.module').then(m => m.DashboardModule) },
+                    { path: '', loadChildren: () => import('./features/projects/projects.module').then(m => m.ProjectsModule) },
+                    { path: 'board/:projectId', loadChildren: () => import('./features/board/board.module').then(m => m.BoardModule) },
                     { path: 'uikit', loadChildren: () => import('./demo/components/uikit/uikit.module').then(m => m.UIkitModule) },
                     { path: 'utilities', loadChildren: () => import('./demo/components/utilities/utilities.module').then(m => m.UtilitiesModule) },
                     { path: 'documentation', loadChildren: () => import('./demo/components/documentation/documentation.module').then(m => m.DocumentationModule) },

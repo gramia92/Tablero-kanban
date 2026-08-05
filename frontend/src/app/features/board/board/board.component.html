@@ -1,0 +1,105 @@
+<p-confirmDialog></p-confirmDialog>
+
+<p-toolbar styleClass="mb-4">
+    <ng-template pTemplate="start">
+        <button pButton icon="pi pi-arrow-left" class="p-button-text mr-2" (click)="backToProjects()"></button>
+        <h2 class="m-0 inline-block vertical-align-middle">{{ project?.name }}</h2>
+    </ng-template>
+    <ng-template pTemplate="end">
+        <button pButton icon="pi pi-file-pdf" label="Exportar PDF" class="p-button-outlined mr-2" [loading]="exportingPdf" (click)="exportReport(ReportFormat.Pdf)"></button>
+        <button pButton icon="pi pi-file-excel" label="Exportar Excel" class="p-button-outlined mr-2" [loading]="exportingExcel" (click)="exportReport(ReportFormat.Excel)"></button>
+        <button pButton icon="pi pi-plus" label="Agregar columna" (click)="openCreateColumnDialog()"></button>
+    </ng-template>
+</p-toolbar>
+
+<div *ngIf="loading" class="text-600">Cargando tablero...</div>
+
+<div class="board-columns flex gap-3 overflow-x-auto pb-3" *ngIf="!loading && board" cdkDropListGroup>
+    <div class="board-column surface-card border-round p-3 flex-shrink-0" style="width: 300px;" *ngFor="let column of board.columns">
+        <div class="flex align-items-center justify-content-between mb-3">
+            <div class="flex align-items-center gap-1">
+                <button pButton icon="pi pi-chevron-left" class="p-button-text p-button-sm" (click)="moveColumn(column, -1)"></button>
+                <span class="font-bold">{{ column.name }}</span>
+                <button pButton icon="pi pi-chevron-right" class="p-button-text p-button-sm" (click)="moveColumn(column, 1)"></button>
+            </div>
+            <div>
+                <button pButton icon="pi pi-pencil" class="p-button-text p-button-sm" (click)="openRenameColumnDialog(column)"></button>
+                <button pButton icon="pi pi-trash" class="p-button-text p-button-danger p-button-sm" (click)="confirmDeleteColumn(column)"></button>
+            </div>
+        </div>
+
+        <div
+            class="task-list"
+            style="min-height: 60px;"
+            cdkDropList
+            [cdkDropListData]="tasksByColumn[column.id]"
+            (cdkDropListDropped)="drop($event, column.id)">
+            <div class="task-card surface-ground border-round p-3 mb-2 cursor-move" *ngFor="let task of tasksByColumn[column.id]" cdkDrag>
+                <div class="flex align-items-start justify-content-between">
+                    <span class="font-medium">{{ task.title }}</span>
+                    <div class="flex-shrink-0">
+                        <button pButton icon="pi pi-pencil" class="p-button-text p-button-sm" (click)="openEditTaskDialog(task)"></button>
+                        <button pButton icon="pi pi-trash" class="p-button-text p-button-danger p-button-sm" (click)="confirmDeleteTask(task)"></button>
+                    </div>
+                </div>
+                <p class="text-sm text-600 mt-1 mb-2" *ngIf="task.description">{{ task.description }}</p>
+                <div class="flex align-items-center gap-2 flex-wrap">
+                    <p-tag [severity]="priorityColor(task.priority)" [value]="priorityLabel(task.priority)"></p-tag>
+                    <span class="text-sm text-500" *ngIf="task.assigneeName"><i class="pi pi-user mr-1"></i>{{ task.assigneeName }}</span>
+                    <span class="text-sm text-500" *ngIf="task.dueDate"><i class="pi pi-calendar mr-1"></i>{{ task.dueDate | date:'d/M/yy' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <button pButton icon="pi pi-plus" label="Agregar tarea" class="p-button-text p-button-sm w-full mt-2" (click)="openCreateTaskDialog(column.id)"></button>
+    </div>
+</div>
+
+<p-dialog header="{{ editingColumnId ? 'Renombrar columna' : 'Nueva columna' }}" [(visible)]="columnDialogVisible" [modal]="true" [style]="{ width: '25rem' }">
+    <form [formGroup]="columnForm" (ngSubmit)="saveColumn()">
+        <label for="columnName" class="block font-medium mb-2">Nombre</label>
+        <input id="columnName" type="text" pInputText formControlName="name" class="w-full">
+        <small class="p-error block mt-1" *ngIf="columnForm.get('name')?.touched && columnForm.get('name')?.invalid">
+            El nombre es obligatorio.
+        </small>
+        <div class="flex justify-content-end gap-2 mt-4">
+            <button pButton type="button" label="Cancelar" class="p-button-text" (click)="columnDialogVisible = false"></button>
+            <button pButton type="submit" label="Guardar" [loading]="savingColumn"></button>
+        </div>
+    </form>
+</p-dialog>
+
+<p-dialog header="{{ taskDialogMode === 'create' ? 'Nueva tarea' : 'Editar tarea' }}" [(visible)]="taskDialogVisible" [modal]="true" [style]="{ width: '30rem' }">
+    <form [formGroup]="taskForm" (ngSubmit)="saveTask()">
+        <div class="field">
+            <label for="title" class="block font-medium mb-2">Título</label>
+            <input id="title" type="text" pInputText formControlName="title" class="w-full">
+            <small class="p-error block mt-1" *ngIf="taskForm.get('title')?.touched && taskForm.get('title')?.invalid">
+                El título es obligatorio.
+            </small>
+        </div>
+        <div class="field mt-3">
+            <label for="description" class="block font-medium mb-2">Descripción</label>
+            <textarea id="description" pInputTextarea formControlName="description" class="w-full" rows="3"></textarea>
+        </div>
+        <div class="field mt-3">
+            <label for="priority" class="block font-medium mb-2">Prioridad</label>
+            <p-dropdown id="priority" formControlName="priority" [options]="priorities" styleClass="w-full">
+                <ng-template let-priority pTemplate="item">{{ priorityLabel(priority) }}</ng-template>
+                <ng-template let-priority pTemplate="selectedItem">{{ priorityLabel(priority) }}</ng-template>
+            </p-dropdown>
+        </div>
+        <div class="field mt-3">
+            <label for="assignee" class="block font-medium mb-2">Responsable</label>
+            <p-dropdown id="assignee" formControlName="assigneeId" [options]="memberOptionsList" optionLabel="label" optionValue="value" styleClass="w-full"></p-dropdown>
+        </div>
+        <div class="field mt-3">
+            <label for="dueDate" class="block font-medium mb-2">Fecha límite</label>
+            <p-calendar id="dueDate" formControlName="dueDate" [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full" inputStyleClass="w-full"></p-calendar>
+        </div>
+        <div class="flex justify-content-end gap-2 mt-4">
+            <button pButton type="button" label="Cancelar" class="p-button-text" (click)="taskDialogVisible = false"></button>
+            <button pButton type="submit" label="Guardar" [loading]="savingTask"></button>
+        </div>
+    </form>
+</p-dialog>
