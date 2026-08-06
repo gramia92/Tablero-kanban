@@ -2,8 +2,6 @@
 
 Aplicación de gestión de proyectos estilo Kanban (Scrum board): proyectos con miembros, tableros con columnas y tareas, drag&drop con persistencia de orden, sincronización en tiempo real entre sesiones y exportación de reportes en PDF/Excel.
 
-Prueba técnica para IdeasGroup — Full Stack Mid-Senior.
-
 ## Stack
 
 | Capa | Tecnología |
@@ -80,7 +78,7 @@ Cuatro proyectos con dependencias en una sola dirección (`WebApi → Infrastruc
 - **`IdeasGroup.Kanban.Infrastructure`** — **adaptadores**: repositorios EF Core, `JwtTokenGenerator`, `PdfProjectReportExporter`, `ExcelProjectReportExporter`.
 - **`IdeasGroup.Kanban.WebApi`** — controllers REST, el hub de SignalR, y el adaptador `SignalRBoardNotifier` (implementa el puerto `IBoardRealtimeNotifier` usando `IHubContext<BoardHub>`).
 
-Ejemplo concreto para justificar en la entrevista: `IBoardRealtimeNotifier` (puerto, en Application, 5 métodos como `NotifyTaskCreatedAsync`) es consumido por `TaskService`/`BoardService` sin que ninguno de los dos importe SignalR; el único lugar que conoce SignalR es `SignalRBoardNotifier` (adaptador, en WebApi) y su registro en el contenedor de DI (`Program.cs`). Cambiar el mecanismo de tiempo real (por ejemplo a WebSockets puros o a un broker externo) implicaría escribir un nuevo adaptador y cambiar una línea de DI — cero cambios en Application o Domain.
+Ejemplo concreto: `IBoardRealtimeNotifier` (puerto, en Application, 5 métodos como `NotifyTaskCreatedAsync`) es consumido por `TaskService`/`BoardService` sin que ninguno de los dos importe SignalR; el único lugar que conoce SignalR es `SignalRBoardNotifier` (adaptador, en WebApi) y su registro en el contenedor de DI (`Program.cs`). Cambiar el mecanismo de tiempo real (por ejemplo a WebSockets puros o a un broker externo) implicaría escribir un nuevo adaptador y cambiar una línea de DI — cero cambios en Application o Domain.
 
 **Por qué hexagonal:** el dominio (reglas de negocio, cálculo de posiciones, validaciones) es lo más valioso y lo más estable del proyecto; aislarlo de EF Core/ASP.NET permite testearlo con fakes en memoria (así están escritos los 47 tests de backend) sin levantar base de datos, y sin acoplar la lógica de negocio a decisiones de infraestructura que podrían cambiar.
 
@@ -95,13 +93,13 @@ Ejemplo concreto para justificar en la entrevista: `IBoardRealtimeNotifier` (pue
 
 Se eligió SignalR (nativo de .NET) sobre alternativas como WebSockets puros o un broker externo (Redis pub/sub, etc.) porque:
 
-1. **Cero infraestructura adicional** — corre dentro del mismo proceso ASP.NET Core, sin un servicio externo que desplegar/mantener, razonable para el alcance de esta prueba.
+1. **Cero infraestructura adicional** — corre dentro del mismo proceso ASP.NET Core, sin un servicio externo que desplegar/mantener.
 2. **Grupos por proyecto listos para usar** — `Groups.AddToGroupAsync` permite aislar los eventos de cada proyecto (`project:{projectId}`) sin reinventar un sistema de salas.
 3. **Reconexión automática y fallback de transporte** (WebSocket → Server-Sent Events → long polling) manejados por el cliente `@microsoft/signalr` sin código adicional.
 
 **Cómo funciona:** `BoardHub` (`/hubs/board`, `[Authorize]`) expone `JoinProject(projectId)`/`LeaveProject(projectId)`. `JoinProject` **revalida la membresía del usuario contra la base de datos** antes de agregarlo al grupo — no basta con tener un JWT válido, tiene que ser miembro real de ese proyecto, si no lanza `HubException` y el cliente lo recibe como rechazo. Cada mutación exitosa en `TaskService`/`BoardService` dispara un evento (`TaskCreated`, `TaskUpdated`, `TaskMoved`, `TaskDeleted`, `BoardChanged`) al grupo del proyecto vía el puerto `IBoardRealtimeNotifier`.
 
-**Dos problemas reales resueltos durante el desarrollo, útiles para la entrevista:**
+**Dos problemas reales resueltos durante el desarrollo:**
 
 - El cliente de navegador no puede mandar el header `Authorization` en el handshake de WebSocket, así que el JWT se manda como `?access_token=` en la query string. Hubo que agregar un `OnMessageReceived` al middleware de JWT que solo lee el token de la query string cuando la ruta empieza con `/hubs` (las peticiones REST normales siguen usando el header).
 - La configuración de serialización JSON de SignalR (`AddSignalR().AddJsonProtocol(...)`) es **independiente** de la de MVC (`AddControllers().AddJsonOptions(...)`) — el `JsonStringEnumConverter` que hace que `Priority` viaje como `"Medium"` en vez de `2` había que registrarlo en los dos lugares por separado, o los enums viajaban como número solo por el canal de SignalR.
@@ -142,37 +140,6 @@ Notas sobre el esquema real (no simplificado):
 
 Todo el esquema nace en una única migración EF Core (`InitialCreate`).
 
-## API
-
-| Método | Ruta | Auth |
-|---|---|---|
-| POST | `/api/auth/register` | — |
-| POST | `/api/auth/login` | — |
-| GET | `/api/auth/me` | ✓ |
-| GET / POST | `/api/projects` | ✓ |
-| GET / PUT / DELETE | `/api/projects/{id}` | ✓ |
-| POST / DELETE | `/api/projects/{id}/members(/{userId})` | ✓ (owner) |
-| GET | `/api/projects/{projectId}/board` | ✓ |
-| POST / PUT / DELETE | `/api/projects/{projectId}/board/columns(/{columnId})` | ✓ |
-| PUT | `/api/projects/{projectId}/board/columns/reorder` | ✓ |
-| GET / POST | `/api/projects/{projectId}/tasks` | ✓ |
-| PUT / DELETE | `/api/projects/{projectId}/tasks/{taskId}` | ✓ |
-| PUT | `/api/projects/{projectId}/tasks/{taskId}/move` | ✓ |
-| GET | `/api/projects/{projectId}/report?format=Pdf\|Excel` | ✓ |
-| WS | `/hubs/board` (`JoinProject`/`LeaveProject`) | ✓ |
-
-Autenticación: JWT HS256, claims estándar (`sub`, `email`, `name`, `jti`), expiración configurable (`Jwt:ExpiryMinutes` en `appsettings.json`).
-
-## Tests
-
-- **Backend — 47 tests** (xUnit): 17 en `Domain.Tests` (entidades + cobertura completa de `TaskPositionCalculator`), 30 en `Application.Tests` (auth, proyectos, tableros, tareas — incluye el test de rebalanceo de posiciones, el más representativo — y reportes), todos contra repositorios fake en memoria.
-- **Frontend — 20 tests** (Jasmine/Karma): `AuthService` (persistencia de sesión en `localStorage`), `AuthGuard`, `AuthInterceptor`, `LoginComponent` (validación de formulario, éxito y error), `ProjectsListComponent` (`isOwner`), y `BoardComponent` — incluye tests de la lógica de `drop()` (drag&drop) que verifican que se calculan los vecinos correctos al reordenar dentro de una columna y al mover a una columna vacía, en el mismo espíritu que el test de rebalanceo del backend.
-
 ## Uso de IA
 
-Este proyecto se desarrolló con asistencia de **Claude Code** (Anthropic) a lo largo de todas las capas: scaffolding inicial, implementación de backend y frontend, debugging (por ejemplo, un bug real de EF Core al agregar hijos a un agregado ya trackeado, un crash del renderer de Angular causado por llamar a un método directamente en un binding de template, y un bug de build de Docker por falta de `fileReplacements` en `angular.json` que hacía que el frontend empaquetado siguiera apuntando a `localhost` en vez de usar rutas relativas), redacción de tests, y este mismo README. Todo el código fue revisado, probado manualmente (incluyendo verificación end-to-end contra la app real, no solo tests) y puede ser explicado/defendido en la entrevista técnica.
-
-## Notas / quirks conocidos
-
-- El puerto `5434` para Postgres en Docker Compose (en vez del `5432` estándar) es para no chocar con instancias de PostgreSQL nativas preexistentes en la máquina de desarrollo — dentro de la red de Docker el backend siempre habla con `postgres:5432` (el mapeo de puerto al host es irrelevante ahí, solo importa para herramientas como `psql`/`dotnet ef` corriendo en el host).
-- CORS en el backend permite `localhost:4200` y `localhost:4201` — el segundo se agregó porque el puerto 4200 estaba ocupado por otro proyecto en la máquina de desarrollo durante una parte del trabajo; es una config de solo-desarrollo, irrelevante en el flujo de Docker Compose (mismo origen vía proxy de nginx).
+Este proyecto se desarrolló con asistencia de **Claude Code** (Anthropic) a lo largo de todas las capas: scaffolding inicial, implementación de backend y frontend, debugging (por ejemplo, un bug real de EF Core al agregar hijos a un agregado ya trackeado, un crash del renderer de Angular causado por llamar a un método directamente en un binding de template, y un bug de build de Docker por falta de `fileReplacements` en `angular.json` que hacía que el frontend empaquetado siguiera apuntando a `localhost` en vez de usar rutas relativas), redacción de tests, y este mismo README. Todo el código fue revisado y probado manualmente, incluyendo verificación end-to-end contra la app real, no solo tests.
