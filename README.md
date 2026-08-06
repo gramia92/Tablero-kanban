@@ -1,4 +1,4 @@
-# Tablero Kanban — IdeasGroup
+# Tablero Kanban
 
 Aplicación de gestión de proyectos estilo Kanban (Scrum board): proyectos con miembros, tableros con columnas y tareas, drag&drop con persistencia de orden, sincronización en tiempo real entre sesiones y exportación de reportes en PDF/Excel.
 
