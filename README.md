@@ -21,8 +21,11 @@ Aplicación de gestión de proyectos estilo Kanban (Scrum board): proyectos con 
 Requiere Docker Desktop.
 
 ```bash
+cp .env.example .env
 docker compose up -d --build
 ```
+
+`.env.example` ya viene con valores por defecto funcionales (no son secretos reales, solo credenciales de desarrollo/evaluación) — no hay ningún secreto ni cadena de conexión escrita directamente en `docker-compose.yml` ni en los `appsettings*.json` del repo, todo se inyecta por variables de entorno.
 
 Esto levanta 3 contenedores:
 
@@ -41,13 +44,16 @@ Abrir `http://localhost:4200`.
 
 ### Opción desarrollo (sin Docker)
 
-Backend:
+Backend — la cadena de conexión y el secreto JWT no están en `appsettings*.json` (van vacíos a propósito), se configuran vía [`dotnet user-secrets`](https://learn.microsoft.com/aspnet/core/security/app-secrets) (no se versionan):
 ```bash
-cd backend
+cd backend/src/IdeasGroup.Kanban.WebApi
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5434;Database=kanban;Username=postgres;Password=postgres"
+dotnet user-secrets set "Jwt:Secret" "cualquier-cadena-larga-y-aleatoria"
+cd ../..
 dotnet ef database update --project src/IdeasGroup.Kanban.Infrastructure --startup-project src/IdeasGroup.Kanban.WebApi
 dotnet run --project src/IdeasGroup.Kanban.WebApi --urls http://localhost:5007
 ```
-Requiere una instancia de PostgreSQL accesible con la cadena de conexión de `appsettings.Development.json`.
+Requiere una instancia de PostgreSQL accesible en el puerto/credenciales que hayas configurado arriba.
 
 Frontend:
 ```bash
