@@ -12,12 +12,7 @@ import { AuthGuard } from './core/guards/auth.guard';
                 canActivate: [AuthGuard],
                 children: [
                     { path: '', loadChildren: () => import('./features/projects/projects.module').then(m => m.ProjectsModule) },
-                    { path: 'board/:projectId', loadChildren: () => import('./features/board/board.module').then(m => m.BoardModule) },
-                    { path: 'uikit', loadChildren: () => import('./demo/components/uikit/uikit.module').then(m => m.UIkitModule) },
-                    { path: 'utilities', loadChildren: () => import('./demo/components/utilities/utilities.module').then(m => m.UtilitiesModule) },
-                    { path: 'documentation', loadChildren: () => import('./demo/components/documentation/documentation.module').then(m => m.DocumentationModule) },
-                    { path: 'blocks', loadChildren: () => import('./demo/components/primeblocks/primeblocks.module').then(m => m.PrimeBlocksModule) },
-                    { path: 'pages', loadChildren: () => import('./demo/components/pages/pages.module').then(m => m.PagesModule) }
+                    { path: 'board/:projectId', loadChildren: () => import('./features/board/board.module').then(m => m.BoardModule) }
                 ]
             },
             { path: 'auth', loadChildren: () => import('./demo/components/auth/auth.module').then(m => m.AuthModule) },
