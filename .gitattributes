@@ -1,0 +1,5 @@
+# Assets provistos por la plantilla Sakai/PrimeNG (temas CSS precompilados,
+# imagenes demo, iconos) — no son codigo de autoria propia. Se excluyen de las
+# estadisticas de lenguaje de GitHub para que reflejen el codigo real del
+# proyecto (C#/TypeScript) en vez del peso en bytes de estos assets.
+frontend/src/assets/** linguist-vendored
