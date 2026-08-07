@@ -1,7 +1,7 @@
 import { FormBuilder } from '@angular/forms';
 import { of } from 'rxjs';
 import { ProjectsListComponent } from './projects-list.component';
-import { Project } from 'src/app/core/models/project.model';
+import { Project, ProjectStatus } from 'src/app/core/models/project.model';
 
 describe('ProjectsListComponent', () => {
     let component: ProjectsListComponent;
@@ -13,6 +13,9 @@ describe('ProjectsListComponent', () => {
         name: 'Proyecto Kanban',
         description: null,
         ownerId: 'owner-1',
+        startDate: null,
+        expectedEndDate: null,
+        status: ProjectStatus.Planned,
         members: [],
         createdAtUtc: '2026-01-01T00:00:00Z'
     };
@@ -55,6 +58,20 @@ describe('ProjectsListComponent', () => {
         expect(component.projects).toEqual([project]);
         expect(component.totalCount).toBe(1);
         expect(component.loading).toBeFalse();
+    });
+
+    it('statusLabel() should translate each status to Spanish', () => {
+        expect(component.statusLabel(ProjectStatus.Planned)).toBe('Planeado');
+        expect(component.statusLabel(ProjectStatus.InProgress)).toBe('En progreso');
+        expect(component.statusLabel(ProjectStatus.Completed)).toBe('Completado');
+        expect(component.statusLabel(ProjectStatus.Cancelled)).toBe('Cancelado');
+    });
+
+    it('statusSeverity() should map each status to its PrimeNG severity', () => {
+        expect(component.statusSeverity(ProjectStatus.InProgress)).toBe('info');
+        expect(component.statusSeverity(ProjectStatus.Completed)).toBe('success');
+        expect(component.statusSeverity(ProjectStatus.Cancelled)).toBe('danger');
+        expect(component.statusSeverity(ProjectStatus.Planned)).toBe('secondary');
     });
 
     it('onSearchInput() should debounce and reload from page 1 with the search term', (done) => {

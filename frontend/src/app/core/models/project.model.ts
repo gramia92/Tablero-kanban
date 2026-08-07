@@ -1,3 +1,10 @@
+export enum ProjectStatus {
+    Planned = 'Planned',
+    InProgress = 'InProgress',
+    Completed = 'Completed',
+    Cancelled = 'Cancelled'
+}
+
 export interface ProjectMember {
     userId: string;
     fullName: string;
@@ -10,6 +17,9 @@ export interface Project {
     name: string;
     description: string | null;
     ownerId: string;
+    startDate: string | null;
+    expectedEndDate: string | null;
+    status: ProjectStatus;
     createdAtUtc: string;
     members: ProjectMember[];
 }
@@ -17,11 +27,17 @@ export interface Project {
 export interface CreateProjectRequest {
     name: string;
     description?: string | null;
+    startDate?: string | null;
+    expectedEndDate?: string | null;
+    status?: ProjectStatus;
 }
 
 export interface UpdateProjectRequest {
     name: string;
     description?: string | null;
+    startDate: string | null;
+    expectedEndDate: string | null;
+    status: ProjectStatus;
 }
 
 export interface AddMemberRequest {

@@ -21,7 +21,9 @@ public class ProjectService
 
     public async Task<ProjectResponse> CreateAsync(Guid ownerId, CreateProjectRequest request, CancellationToken cancellationToken = default)
     {
-        var project = Project.Create(request.Name, request.Description, ownerId);
+        var project = Project.Create(
+            request.Name, request.Description, ownerId,
+            request.StartDate, request.ExpectedEndDate, request.Status);
 
         var board = Board.Create(project.Id, "Tablero principal");
         foreach (var columnName in DefaultColumnNames)
@@ -60,7 +62,7 @@ public class ProjectService
         var project = await GetProjectOrThrowAsync(projectId, cancellationToken);
         EnsureOwner(project, userId);
 
-        project.Rename(request.Name, request.Description);
+        project.Update(request.Name, request.Description, request.StartDate, request.ExpectedEndDate, request.Status);
         await _projectRepository.UpdateAsync(project, cancellationToken);
 
         return await ToResponseAsync(project, cancellationToken);
@@ -141,6 +143,9 @@ public class ProjectService
             })
             .ToList();
 
-        return new ProjectResponse(project.Id, project.Name, project.Description, project.OwnerId, project.CreatedAt, members);
+        return new ProjectResponse(
+            project.Id, project.Name, project.Description, project.OwnerId,
+            project.StartDate, project.ExpectedEndDate, project.Status,
+            project.CreatedAt, members);
     }
 }

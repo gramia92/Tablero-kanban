@@ -12,6 +12,9 @@ public class Project : AuditableEntity
     public string Name { get; private set; } = null!;
     public string? Description { get; private set; }
     public Guid OwnerId { get; private set; }
+    public DateTime? StartDate { get; private set; }
+    public DateTime? ExpectedEndDate { get; private set; }
+    public ProjectStatus Status { get; private set; }
 
     public IReadOnlyCollection<ProjectMember> Members => _members.AsReadOnly();
     public IReadOnlyCollection<Label> Labels => _labels.AsReadOnly();
@@ -20,7 +23,9 @@ public class Project : AuditableEntity
     {
     }
 
-    public static Project Create(string name, string? description, Guid ownerId)
+    public static Project Create(
+        string name, string? description, Guid ownerId,
+        DateTime? startDate = null, DateTime? expectedEndDate = null, ProjectStatus status = ProjectStatus.Planned)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -32,11 +37,16 @@ public class Project : AuditableEntity
             throw new DomainException("El proyecto debe tener un propietario.");
         }
 
+        ValidateDateRange(startDate, expectedEndDate);
+
         var project = new Project
         {
             Name = name.Trim(),
             Description = description?.Trim(),
-            OwnerId = ownerId
+            OwnerId = ownerId,
+            StartDate = startDate,
+            ExpectedEndDate = expectedEndDate,
+            Status = status
         };
 
         project._members.Add(ProjectMember.Create(project.Id, ownerId, ProjectRole.Owner));
@@ -44,16 +54,31 @@ public class Project : AuditableEntity
         return project;
     }
 
-    public void Rename(string name, string? description)
+    public void Update(
+        string name, string? description,
+        DateTime? startDate, DateTime? expectedEndDate, ProjectStatus status)
     {
         if (string.IsNullOrWhiteSpace(name))
         {
             throw new DomainException("El nombre del proyecto es obligatorio.");
         }
 
+        ValidateDateRange(startDate, expectedEndDate);
+
         Name = name.Trim();
         Description = description?.Trim();
+        StartDate = startDate;
+        ExpectedEndDate = expectedEndDate;
+        Status = status;
         Touch();
+    }
+
+    private static void ValidateDateRange(DateTime? startDate, DateTime? expectedEndDate)
+    {
+        if (startDate.HasValue && expectedEndDate.HasValue && expectedEndDate.Value < startDate.Value)
+        {
+            throw new DomainException("La fecha de fin prevista no puede ser anterior a la fecha de inicio.");
+        }
     }
 
     public ProjectMember AddMember(Guid userId, ProjectRole role)

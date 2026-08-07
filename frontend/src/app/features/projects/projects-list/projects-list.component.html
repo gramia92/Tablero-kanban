@@ -33,6 +33,13 @@
                 </div>
             </ng-template>
             <p class="text-600" style="min-height: 3rem;">{{ project.description || 'Sin descripción' }}</p>
+            <p-tag class="mb-2 inline-block" [severity]="statusSeverity(project.status)" [value]="statusLabel(project.status)"></p-tag>
+            <p class="text-sm text-500 mt-2 mb-1" *ngIf="project.startDate || project.expectedEndDate">
+                <i class="pi pi-calendar mr-1"></i>
+                {{ project.startDate ? (project.startDate | date:'d/M/yy') : '?' }}
+                –
+                {{ project.expectedEndDate ? (project.expectedEndDate | date:'d/M/yy') : '?' }}
+            </p>
             <p class="text-sm text-500 mb-3">
                 <i class="pi pi-users mr-1"></i>{{ project.members.length }} miembro(s)
             </p>
@@ -63,6 +70,20 @@
         <div class="field mt-3">
             <label for="description" class="block font-medium mb-2">Descripción</label>
             <textarea id="description" pInputTextarea formControlName="description" class="w-full" rows="3"></textarea>
+        </div>
+        <div class="formgrid grid mt-3">
+            <div class="field col-6">
+                <label for="startDate" class="block font-medium mb-2">Fecha de inicio</label>
+                <p-calendar id="startDate" formControlName="startDate" [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full" inputStyleClass="w-full"></p-calendar>
+            </div>
+            <div class="field col-6">
+                <label for="expectedEndDate" class="block font-medium mb-2">Fecha fin prevista</label>
+                <p-calendar id="expectedEndDate" formControlName="expectedEndDate" [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full" inputStyleClass="w-full"></p-calendar>
+            </div>
+        </div>
+        <div class="field mt-3">
+            <label for="status" class="block font-medium mb-2">Estado</label>
+            <p-dropdown id="status" formControlName="status" [options]="statusOptions" optionLabel="label" optionValue="value" styleClass="w-full"></p-dropdown>
         </div>
         <div class="flex justify-content-end gap-2 mt-4">
             <button pButton type="button" label="Cancelar" class="p-button-text" (click)="projectDialogVisible = false"></button>

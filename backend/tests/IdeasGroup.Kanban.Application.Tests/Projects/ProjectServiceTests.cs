@@ -102,7 +102,7 @@ public class ProjectServiceTests
         var service = new ProjectService(repository, new FakeUserRepository());
 
         await Assert.ThrowsAsync<ForbiddenProjectAccessException>(
-            () => service.UpdateAsync(memberId, project.Id, new UpdateProjectRequest("Nuevo nombre", null)));
+            () => service.UpdateAsync(memberId, project.Id, new UpdateProjectRequest("Nuevo nombre", null, null, null, Domain.Enums.ProjectStatus.Planned)));
     }
 
     [Fact]

@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
-import { Project, ProjectMember } from 'src/app/core/models/project.model';
+import { Project, ProjectMember, ProjectStatus } from 'src/app/core/models/project.model';
 import { ProjectService } from 'src/app/core/services/project.service';
 import { AuthService } from 'src/app/core/services/auth.service';
 
@@ -28,6 +28,13 @@ export class ProjectsListComponent implements OnInit {
     savingProject = false;
     private editingProjectId: string | null = null;
 
+    readonly statusOptions = [
+        { label: 'Planeado', value: ProjectStatus.Planned },
+        { label: 'En progreso', value: ProjectStatus.InProgress },
+        { label: 'Completado', value: ProjectStatus.Completed },
+        { label: 'Cancelado', value: ProjectStatus.Cancelled }
+    ];
+
     membersDialogVisible = false;
     membersDialogProject: Project | null = null;
     memberEmailForm: FormGroup;
@@ -42,7 +49,10 @@ export class ProjectsListComponent implements OnInit {
     ) {
         this.projectForm = this.fb.group({
             name: ['', Validators.required],
-            description: ['']
+            description: [''],
+            startDate: [null as Date | null],
+            expectedEndDate: [null as Date | null],
+            status: [ProjectStatus.Planned]
         });
         this.memberEmailForm = this.fb.group({
             email: ['', [Validators.required, Validators.email]]
@@ -91,14 +101,20 @@ export class ProjectsListComponent implements OnInit {
     openCreateDialog(): void {
         this.projectDialogMode = 'create';
         this.editingProjectId = null;
-        this.projectForm.reset({ name: '', description: '' });
+        this.projectForm.reset({ name: '', description: '', startDate: null, expectedEndDate: null, status: ProjectStatus.Planned });
         this.projectDialogVisible = true;
     }
 
     openEditDialog(project: Project): void {
         this.projectDialogMode = 'edit';
         this.editingProjectId = project.id;
-        this.projectForm.reset({ name: project.name, description: project.description ?? '' });
+        this.projectForm.reset({
+            name: project.name,
+            description: project.description ?? '',
+            startDate: project.startDate ? new Date(project.startDate) : null,
+            expectedEndDate: project.expectedEndDate ? new Date(project.expectedEndDate) : null,
+            status: project.status
+        });
         this.projectDialogVisible = true;
     }
 
@@ -109,7 +125,14 @@ export class ProjectsListComponent implements OnInit {
         }
 
         this.savingProject = true;
-        const request = this.projectForm.value;
+        const value = this.projectForm.value;
+        const request = {
+            name: value.name,
+            description: value.description || null,
+            startDate: value.startDate ? (value.startDate as Date).toISOString() : null,
+            expectedEndDate: value.expectedEndDate ? (value.expectedEndDate as Date).toISOString() : null,
+            status: value.status
+        };
         const operation = this.projectDialogMode === 'create'
             ? this.projectService.create(request)
             : this.projectService.update(this.editingProjectId as string, request);
@@ -219,6 +242,19 @@ export class ProjectsListComponent implements OnInit {
                 });
             }
         });
+    }
+
+    statusLabel(status: ProjectStatus): string {
+        return this.statusOptions.find(o => o.value === status)?.label ?? status;
+    }
+
+    statusSeverity(status: ProjectStatus): 'info' | 'success' | 'danger' | 'secondary' {
+        switch (status) {
+            case ProjectStatus.InProgress: return 'info';
+            case ProjectStatus.Completed: return 'success';
+            case ProjectStatus.Cancelled: return 'danger';
+            default: return 'secondary';
+        }
     }
 
     private refreshMembersDialog(projectId: string): void {
