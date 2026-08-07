@@ -18,10 +18,23 @@ Aplicación de gestión de proyectos estilo Kanban (Scrum board): proyectos con 
 
 ### Opción rápida: Docker Compose (recomendada)
 
-Requiere Docker Desktop.
+Requiere tener Docker corriendo (Docker Desktop en Windows/Mac, o Docker Engine en Linux).
 
+macOS/Linux o Git Bash/WSL en Windows:
 ```bash
 cp .env.example .env
+docker compose up -d --build
+```
+
+Windows (símbolo del sistema / cmd.exe):
+```cmd
+copy .env.example .env
+docker compose up -d --build
+```
+
+Windows (PowerShell):
+```powershell
+Copy-Item .env.example .env
 docker compose up -d --build
 ```
 
