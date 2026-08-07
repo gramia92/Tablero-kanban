@@ -74,11 +74,11 @@
         <div class="formgrid grid mt-3">
             <div class="field col-6">
                 <label for="startDate" class="block font-medium mb-2">Fecha de inicio</label>
-                <p-calendar id="startDate" formControlName="startDate" [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full" inputStyleClass="w-full"></p-calendar>
+                <p-calendar id="startDate" formControlName="startDate" [showIcon]="true" appendTo="body" dateFormat="dd/mm/yy" styleClass="w-full" inputStyleClass="w-full"></p-calendar>
             </div>
             <div class="field col-6">
                 <label for="expectedEndDate" class="block font-medium mb-2">Fecha fin prevista</label>
-                <p-calendar id="expectedEndDate" formControlName="expectedEndDate" [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full" inputStyleClass="w-full"></p-calendar>
+                <p-calendar id="expectedEndDate" formControlName="expectedEndDate" [showIcon]="true" appendTo="body" dateFormat="dd/mm/yy" styleClass="w-full" inputStyleClass="w-full"></p-calendar>
             </div>
         </div>
         <div class="field mt-3">

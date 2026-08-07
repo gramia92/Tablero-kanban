@@ -95,7 +95,7 @@
         </div>
         <div class="field mt-3">
             <label for="dueDate" class="block font-medium mb-2">Fecha límite</label>
-            <p-calendar id="dueDate" formControlName="dueDate" [showIcon]="true" dateFormat="dd/mm/yy" styleClass="w-full" inputStyleClass="w-full"></p-calendar>
+            <p-calendar id="dueDate" formControlName="dueDate" [showIcon]="true" appendTo="body" dateFormat="dd/mm/yy" styleClass="w-full" inputStyleClass="w-full"></p-calendar>
         </div>
         <div class="flex justify-content-end gap-2 mt-4">
             <button pButton type="button" label="Cancelar" class="p-button-text" (click)="taskDialogVisible = false"></button>
