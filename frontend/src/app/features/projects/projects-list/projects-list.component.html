@@ -5,14 +5,22 @@
         <h2 class="m-0">Mis proyectos</h2>
     </ng-template>
     <ng-template pTemplate="end">
+        <span class="p-input-icon-left mr-2">
+            <i class="pi pi-search"></i>
+            <input pInputText type="text" placeholder="Buscar por nombre..." #searchInput (input)="onSearchInput(searchInput.value)">
+        </span>
         <button pButton icon="pi pi-plus" label="Nuevo proyecto" (click)="openCreateDialog()"></button>
     </ng-template>
 </p-toolbar>
 
 <div *ngIf="loading" class="text-600">Cargando proyectos...</div>
 
-<div *ngIf="!loading && projects.length === 0" class="text-600">
+<div *ngIf="!loading && projects.length === 0 && !searchTerm" class="text-600">
     Todavía no tienes proyectos. Crea el primero con el botón "Nuevo proyecto".
+</div>
+
+<div *ngIf="!loading && projects.length === 0 && searchTerm" class="text-600">
+    No hay proyectos que coincidan con "{{ searchTerm }}".
 </div>
 
 <div class="grid" *ngIf="!loading && projects.length > 0">
@@ -37,6 +45,11 @@
         </p-card>
     </div>
 </div>
+
+<p-paginator *ngIf="!loading && totalCount > pageSize"
+    [rows]="pageSize" [totalRecords]="totalCount" [first]="(page - 1) * pageSize"
+    (onPageChange)="onPageChange($event)">
+</p-paginator>
 
 <p-dialog header="{{ projectDialogMode === 'create' ? 'Nuevo proyecto' : 'Editar proyecto' }}" [(visible)]="projectDialogVisible" [modal]="true" [style]="{ width: '30rem' }">
     <form [formGroup]="projectForm" (ngSubmit)="saveProject()">

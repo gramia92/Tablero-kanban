@@ -1,4 +1,5 @@
 using IdeasGroup.Kanban.Application.Abstractions;
+using IdeasGroup.Kanban.Application.Common;
 using IdeasGroup.Kanban.Domain.Entities;
 using IdeasGroup.Kanban.Domain.Enums;
 using IdeasGroup.Kanban.Domain.Exceptions;
@@ -33,12 +34,17 @@ public class ProjectService
         return await ToResponseAsync(project, cancellationToken);
     }
 
-    public async Task<IReadOnlyList<ProjectResponse>> ListForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async Task<PagedResult<ProjectResponse>> ListForUserAsync(
+        Guid userId, int page = 1, int pageSize = 10, string? search = null, CancellationToken cancellationToken = default)
     {
-        var projects = await _projectRepository.ListForUserAsync(userId, cancellationToken);
+        page = page < 1 ? 1 : page;
+        pageSize = pageSize is < 1 or > 100 ? 10 : pageSize;
+
+        var (projects, totalCount) = await _projectRepository.ListForUserAsync(userId, page, pageSize, search, cancellationToken);
         var usersById = await GetUsersByIdAsync(projects.SelectMany(p => p.Members.Select(m => m.UserId)), cancellationToken);
 
-        return projects.Select(p => BuildResponse(p, usersById)).ToList();
+        var items = projects.Select(p => BuildResponse(p, usersById)).ToList();
+        return new PagedResult<ProjectResponse>(items, totalCount, page, pageSize);
     }
 
     public async Task<ProjectResponse> GetByIdAsync(Guid userId, Guid projectId, CancellationToken cancellationToken = default)

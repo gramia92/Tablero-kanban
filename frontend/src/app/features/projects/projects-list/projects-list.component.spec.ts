@@ -19,7 +19,7 @@ describe('ProjectsListComponent', () => {
 
     beforeEach(() => {
         projectServiceSpy = jasmine.createSpyObj('ProjectService', ['list', 'create', 'update', 'delete', 'addMember', 'removeMember', 'getById']);
-        projectServiceSpy.list.and.returnValue(of([]));
+        projectServiceSpy.list.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 9 }));
         authServiceStub = { currentUser: { userId: 'owner-1' } };
 
         component = new ProjectsListComponent(
@@ -47,12 +47,27 @@ describe('ProjectsListComponent', () => {
         expect(component.isOwner(project)).toBeFalse();
     });
 
-    it('loadProjects() should populate the projects list from the service', () => {
-        projectServiceSpy.list.and.returnValue(of([project]));
+    it('loadProjects() should populate the projects list and total count from the service', () => {
+        projectServiceSpy.list.and.returnValue(of({ items: [project], totalCount: 1, page: 1, pageSize: 9 }));
 
         component.loadProjects();
 
         expect(component.projects).toEqual([project]);
+        expect(component.totalCount).toBe(1);
         expect(component.loading).toBeFalse();
+    });
+
+    it('onSearchInput() should debounce and reload from page 1 with the search term', (done) => {
+        projectServiceSpy.list.and.returnValue(of({ items: [], totalCount: 0, page: 1, pageSize: 9 }));
+        component.page = 3;
+
+        component.onSearchInput('kanban');
+
+        setTimeout(() => {
+            expect(component.page).toBe(1);
+            expect(component.searchTerm).toBe('kanban');
+            expect(projectServiceSpy.list).toHaveBeenCalledWith(1, 9, 'kanban');
+            done();
+        }, 450);
     });
 });

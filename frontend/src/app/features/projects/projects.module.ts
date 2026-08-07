@@ -11,6 +11,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ToolbarModule } from 'primeng/toolbar';
+import { PaginatorModule } from 'primeng/paginator';
 import { ConfirmationService } from 'primeng/api';
 import { ProjectsRoutingModule } from './projects-routing.module';
 import { ProjectsListComponent } from './projects-list/projects-list.component';
@@ -29,7 +30,8 @@ import { ProjectsListComponent } from './projects-list/projects-list.component';
         TableModule,
         TagModule,
         ConfirmDialogModule,
-        ToolbarModule
+        ToolbarModule,
+        PaginatorModule
     ],
     declarations: [ProjectsListComponent],
     providers: [ConfirmationService]

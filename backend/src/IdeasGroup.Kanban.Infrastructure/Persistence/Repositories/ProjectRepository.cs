@@ -18,12 +18,29 @@ public class ProjectRepository : IProjectRepository
             .Include(p => p.Members)
             .FirstOrDefaultAsync(p => p.Id == projectId, cancellationToken);
 
-    public async Task<IReadOnlyList<Project>> ListForUserAsync(Guid userId, CancellationToken cancellationToken = default) =>
-        await _dbContext.Projects
+    public async Task<(IReadOnlyList<Project> Items, int TotalCount)> ListForUserAsync(
+        Guid userId, int page, int pageSize, string? search, CancellationToken cancellationToken = default)
+    {
+        var query = _dbContext.Projects
             .Include(p => p.Members)
-            .Where(p => p.Members.Any(m => m.UserId == userId))
+            .Where(p => p.Members.Any(m => m.UserId == userId));
+
+        if (!string.IsNullOrWhiteSpace(search))
+        {
+            var pattern = search.Trim().ToLower();
+            query = query.Where(p => p.Name.ToLower().Contains(pattern));
+        }
+
+        var totalCount = await query.CountAsync(cancellationToken);
+
+        var items = await query
             .OrderByDescending(p => p.CreatedAt)
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
+    }
 
     public async Task AddAsync(Project project, Board board, CancellationToken cancellationToken = default)
     {

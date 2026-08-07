@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { HttpErrorResponse } from '@angular/common/http';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 import { Project, ProjectMember } from 'src/app/core/models/project.model';
 import { ProjectService } from 'src/app/core/services/project.service';
 import { AuthService } from 'src/app/core/services/auth.service';
@@ -14,6 +15,12 @@ export class ProjectsListComponent implements OnInit {
 
     projects: Project[] = [];
     loading = false;
+
+    page = 1;
+    pageSize = 9;
+    totalCount = 0;
+    searchTerm = '';
+    private searchChanged = new Subject<string>();
 
     projectDialogVisible = false;
     projectDialogMode: 'create' | 'edit' = 'create';
@@ -40,17 +47,34 @@ export class ProjectsListComponent implements OnInit {
         this.memberEmailForm = this.fb.group({
             email: ['', [Validators.required, Validators.email]]
         });
+
+        this.searchChanged.pipe(debounceTime(400), distinctUntilChanged()).subscribe(term => {
+            this.searchTerm = term;
+            this.page = 1;
+            this.loadProjects();
+        });
     }
 
     ngOnInit(): void {
         this.loadProjects();
     }
 
+    onSearchInput(term: string): void {
+        this.searchChanged.next(term);
+    }
+
+    onPageChange(event: { page?: number; rows?: number }): void {
+        this.pageSize = event.rows ?? this.pageSize;
+        this.page = (event.page ?? 0) + 1;
+        this.loadProjects();
+    }
+
     loadProjects(): void {
         this.loading = true;
-        this.projectService.list().subscribe({
-            next: projects => {
-                this.projects = projects;
+        this.projectService.list(this.page, this.pageSize, this.searchTerm || null).subscribe({
+            next: result => {
+                this.projects = result.items;
+                this.totalCount = result.totalCount;
                 this.loading = false;
             },
             error: () => {
@@ -99,6 +123,9 @@ export class ProjectsListComponent implements OnInit {
                     summary: this.projectDialogMode === 'create' ? 'Proyecto creado' : 'Proyecto actualizado',
                     detail: request.name
                 });
+                if (this.projectDialogMode === 'create') {
+                    this.page = 1;
+                }
                 this.loadProjects();
             },
             error: (err: HttpErrorResponse) => {

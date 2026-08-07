@@ -1,3 +1,4 @@
+using IdeasGroup.Kanban.Application.Common;
 using IdeasGroup.Kanban.Application.Projects;
 using IdeasGroup.Kanban.Domain.Exceptions;
 using IdeasGroup.Kanban.WebApi.Extensions;
@@ -19,9 +20,11 @@ public class ProjectsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IReadOnlyList<ProjectResponse>>> List(CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResult<ProjectResponse>>> List(
+        [FromQuery] int page = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null,
+        CancellationToken cancellationToken = default)
     {
-        return Ok(await _projectService.ListForUserAsync(User.GetUserId(), cancellationToken));
+        return Ok(await _projectService.ListForUserAsync(User.GetUserId(), page, pageSize, search, cancellationToken));
     }
 
     [HttpPost]

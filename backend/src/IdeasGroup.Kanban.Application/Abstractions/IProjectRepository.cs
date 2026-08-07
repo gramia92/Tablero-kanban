@@ -6,7 +6,8 @@ public interface IProjectRepository
 {
     Task<Project?> GetByIdAsync(Guid projectId, CancellationToken cancellationToken = default);
 
-    Task<IReadOnlyList<Project>> ListForUserAsync(Guid userId, CancellationToken cancellationToken = default);
+    Task<(IReadOnlyList<Project> Items, int TotalCount)> ListForUserAsync(
+        Guid userId, int page, int pageSize, string? search, CancellationToken cancellationToken = default);
 
     Task AddAsync(Project project, Board board, CancellationToken cancellationToken = default);
 

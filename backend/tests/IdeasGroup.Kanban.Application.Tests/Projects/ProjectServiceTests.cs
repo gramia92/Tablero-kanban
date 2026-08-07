@@ -40,8 +40,32 @@ public class ProjectServiceTests
         var mine = await service.ListForUserAsync(ownerId);
         var others = await service.ListForUserAsync(otherId);
 
-        Assert.Single(mine);
-        Assert.Empty(others);
+        Assert.Single(mine.Items);
+        Assert.Equal(1, mine.TotalCount);
+        Assert.Empty(others.Items);
+        Assert.Equal(0, others.TotalCount);
+    }
+
+    [Fact]
+    public async Task ListForUserAsync_pagina_y_filtra_por_nombre_con_coincidencia_parcial()
+    {
+        var repository = new FakeProjectRepository();
+        var ownerId = Guid.NewGuid();
+        repository.Seed(Project.Create("Rediseño Web", null, ownerId));
+        repository.Seed(Project.Create("App Móvil", null, ownerId));
+        repository.Seed(Project.Create("Rediseño App", null, ownerId));
+        var service = new ProjectService(repository, new FakeUserRepository());
+
+        var filtered = await service.ListForUserAsync(ownerId, page: 1, pageSize: 10, search: "rediseño");
+        var firstPage = await service.ListForUserAsync(ownerId, page: 1, pageSize: 2, search: null);
+        var secondPage = await service.ListForUserAsync(ownerId, page: 2, pageSize: 2, search: null);
+
+        Assert.Equal(2, filtered.TotalCount);
+        Assert.All(filtered.Items, p => Assert.Contains("rediseño", p.Name, StringComparison.OrdinalIgnoreCase));
+
+        Assert.Equal(3, firstPage.TotalCount);
+        Assert.Equal(2, firstPage.Items.Count);
+        Assert.Single(secondPage.Items);
     }
 
     [Fact]
